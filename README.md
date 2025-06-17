@@ -66,15 +66,15 @@ When first run, the application will automatically generate a random admin passw
 
 ## 使用方法 | Usage
 
-服务器运行后，将提供一个OpenAI兼容的API，地址为`http://localhost:8000/v1`，以及一个Web管理界面，地址为`http://localhost:8000/admin`。
+服务器运行后，将提供一个OpenAI兼容的API，地址为`http://localhost:8000/v1`，以及一个Web管理界面，地址为`http://localhost:8000/admin/login`。
 
-Once running, the server provides an OpenAI-compatible API at `http://localhost:8000/v1` and a web management interface at `http://localhost:8000/admin`.
+Once running, the server provides an OpenAI-compatible API at `http://localhost:8000/v1` and a web management interface at `http://localhost:8000/admin/login`.
 
 ### Web管理界面 | Web Management Interface
 
-访问`http://localhost:8000/admin`登录管理界面。首次登录时，使用控制台输出的初始密码。
+访问`http://localhost:8000/admin/login`登录管理界面。首次登录时，使用控制台输出的初始密码。
 
-Visit `http://localhost:8000/admin` to access the management interface. Use the initial password output to the console for first login.
+Visit `http://localhost:8000/admin/login` to access the management interface. Use the initial password output to the console for first login.
 
 在管理界面中，您可以：
 - 管理凭证（添加、查看、删除）
