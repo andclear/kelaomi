@@ -66,15 +66,15 @@ When first run, the application will automatically generate a random admin passw
 
 ## 使用方法 | Usage
 
-服务器运行后，将提供一个OpenAI兼容的API，地址为`http://localhost:8000/v1`，以及一个Web管理界面，地址为`http://localhost:8000/admin/login`。
+服务器运行后，将提供一个OpenAI兼容的API，地址为`http://localhost:8000/v1`，以及一个Web管理界面，地址为`http://localhost:8000/admin`。
 
-Once running, the server provides an OpenAI-compatible API at `http://localhost:8000/v1` and a web management interface at `http://localhost:8000/admin/login`.
+Once running, the server provides an OpenAI-compatible API at `http://localhost:8000/v1` and a web management interface at `http://localhost:8000/admin`.
 
 ### Web管理界面 | Web Management Interface
 
-访问`http://localhost:8000/admin/login`登录管理界面。首次登录时，使用控制台输出的初始密码。
+访问`http://localhost:8000/admin`登录管理界面。首次登录时，使用控制台输出的初始密码。
 
-Visit `http://localhost:8000/admin/login` to access the management interface. Use the initial password output to the console for first login.
+Visit `http://localhost:8000/admin` to access the management interface. Use the initial password output to the console for first login.
 
 在管理界面中，您可以：
 - 管理凭证（添加、查看、删除）
@@ -120,6 +120,93 @@ In the management interface, you can:
     ],
     "stream": true
   }'
+```
+
+## 使用 Docker 运行 | Running with Docker
+
+为了简化部署和管理，项目提供了 `Dockerfile`。您可以使用 Docker 来构建和运行此应用，并通过数据卷（Volume）实现数据持久化。
+
+To simplify deployment and management, a `Dockerfile` is provided. You can use Docker to build and run this application, with data persistence achieved through volumes.
+
+### 1. 构建 Docker 镜像 | Build the Docker Image
+
+在项目根目录下，运行以下命令来构建镜像：
+In the project root directory, run the following command to build the image:
+
+```bash
+docker build -t atlassian-proxy .
+```
+
+### 2. 运行 Docker 容器 | Run the Docker Container
+
+为了持久化存储凭证、API令牌和管理员密码，您需要创建一个 Docker 数据卷并将其挂载到容器的 `/data` 目录。
+
+To persist credentials, API tokens, and the admin password, you need to create a Docker volume and mount it to the `/data` directory inside the container.
+
+**a. 创建数据卷 (推荐) | Create a volume (Recommended)**
+
+```bash
+docker volume create atlassian-proxy-data
+```
+
+**b. 运行容器 | Run the container**
+
+使用以下命令来启动容器。这会将容器的 8000 端口映射到主机的 8000 端口，并将我们刚刚创建的数据卷挂载到容器中。
+
+Use the following command to start the container. This will map port 8000 of the container to port 8000 on your host and mount the volume we just created.
+
+```bash
+docker run -d -p 8000:8000 --name atlassian-proxy-app -v atlassian-proxy-data:/data atlassian-proxy
+```
+
+- `-d`: 在后台以分离模式运行 | Run in detached mode
+- `-p 8000:8000`: 将主机的 8000 端口映射到容器的 8000 端口 | Map host port 8000 to container port 8000
+- `--name atlassian-proxy-app`: 为容器命名 | Name the container
+- `-v atlassian-proxy-data:/data`: 将数据卷挂载到容器的 `/data` 目录 | Mount the volume to the `/data` directory
+
+### 3. 查看日志和初始密码 | View Logs and Initial Password
+
+首次运行时，应用会生成一个初始管理员密码。您可以通过以下命令查看容器日志来获取它：
+
+On the first run, the application will generate an initial admin password. You can view the container logs to get it:
+
+```bash
+docker logs atlassian-proxy-app
+```
+
+### 4. 访问应用 | Access the Application
+
+- **Web管理界面 | Web Management Interface**: `http://localhost:8000/admin`
+- **OpenAI兼容API | OpenAI-compatible API**: `http://localhost:8000/v1`
+
+### 使用 Docker Compose (可选) | Using Docker Compose (Optional)
+
+为了更方便地管理，您可以使用 `docker-compose.yml` 文件：
+
+For even easier management, you can use a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+
+services:
+  atlassian-proxy:
+    build: .
+    container_name: atlassian-proxy-app
+    ports:
+      - "8000:8000"
+    volumes:
+      - atlassian-proxy-data:/data
+    restart: unless-stopped
+
+volumes:
+  atlassian-proxy-data:
+```
+
+将以上内容保存为 `docker-compose.yml`，然后使用以下命令启动：
+Save the content above as `docker-compose.yml`, then start with:
+
+```bash
+docker-compose up -d
 ```
 
 ## 支持的模型 | Supported Models

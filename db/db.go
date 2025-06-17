@@ -54,7 +54,8 @@ func InitDB() (*gorm.DB, error) {
 	var err error
 	dbOnce.Do(func() {
 		// Database file path
-		dbPath := ".credentials.db"
+		// 将数据库文件路径设置在 /data 卷中，以便持久化
+		dbPath := "/data/credentials.db"
 
 		// Ensure database directory exists
 		if err = ensureDBDir(dbPath); err != nil {
