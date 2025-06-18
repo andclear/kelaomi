@@ -1,18 +1,17 @@
 package db
 
 import (
-	"errors"
-	"github.com/jackc/pgconn" // For PostgreSQL error codes
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"log"
 	"math/big"
 	"os"
-	"gorm.io/driver/sqlite" // Added for local dev fallback
 	"path/filepath"
 	"sync"
 	"time"
+
+	"gorm.io/driver/sqlite" // Added for local dev fallback
 
 	"gorm.io/driver/postgres" // Changed from sqlite
 	"gorm.io/gorm"
@@ -81,54 +80,8 @@ func InitDB() (*gorm.DB, error) {
 		// Auto migrate table structure
 		err = db.AutoMigrate(&Credential{}, &APIToken{}, &AdminPassword{})
 		if err != nil {
-			log.Printf("AutoMigrate returned error: %v (Type: %T)", err, err)
-			var pgErr *pgconn.PgError
-			foundPgError42P07 := false
-
-			// Attempt direct assertion first, as %T suggests it might be the direct type
-			if errors.As(err, &pgErr) {
-				log.Printf("Direct assertion to *pgconn.PgError successful. Code from pgErr.Code: [%s]", pgErr.Code)
-				if pgErr.Code == "42P07" {
-					foundPgError42P07 = true
-				} else {
-					 log.Printf("Directly asserted to PgError, but code is [%s], not \"42P07\".", pgErr.Code)
-				}
-			} else {
-				log.Printf("Direct assertion to *pgconn.PgError FAILED, even though type was reported as %T. Proceeding to check error chain.", err)
-				// If direct assertion fails, check the chain (this path should ideally not be taken given the %T log)
-				currentErr := err
-				depth := 0
-				for currentErr != nil {
-					log.Printf("Checking error in chain (depth %d): %v (Type: %T)", depth, currentErr, currentErr)
-					if errors.As(currentErr, &pgErr) {
-						log.Printf("Chain (depth %d): Successfully asserted to *pgconn.PgError. Code from pgErr.Code: [%s]", depth, pgErr.Code)
-						if pgErr.Code == "42P07" {
-							log.Printf("Chain (depth %d): PgError code IS \"42P07\".", depth)
-							foundPgError42P07 = true
-							break
-						} else {
-							log.Printf("Chain (depth %d): PgError code is [%s], not \"42P07\".", depth, pgErr.Code)
-						}
-					} else {
-						 log.Printf("Chain (depth %d): Failed to assert current error in chain to *pgconn.PgError.", depth)
-					}
-					prevErr := currentErr
-					currentErr = errors.Unwrap(currentErr)
-					if currentErr == prevErr && currentErr != nil { // Avoid infinite loop if Unwrap returns itself and is not nil
-						log.Printf("Chain (depth %d): errors.Unwrap returned the same error, breaking loop to prevent infinite recursion.", depth)
-						break
-					}
-					depth++
-				}
-			}
-
-			if foundPgError42P07 {
-				log.Println("Tables already exist (PgError 42P07 detected), skipping migration.")
-				err = nil // Clear the error for the outer scope
-			} else {
-				log.Printf("Failed to migrate table structure (PgError 42P07 not found after checks): %v", err)
-				return
-			}
+			log.Printf("Failed to migrate table structure: %v", err)
+			return
 		}
 	})
 
