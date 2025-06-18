@@ -7,11 +7,12 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"gorm.io/driver/sqlite" // Added for local dev fallback
 	"path/filepath"
 	"sync"
 	"time"
 
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres" // Changed from sqlite
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -43,36 +44,36 @@ var (
 	dbOnce sync.Once
 )
 
-// Ensure database directory exists
-func ensureDBDir(dbPath string) error {
-	dir := filepath.Dir(dbPath)
-	return os.MkdirAll(dir, 0755)
-}
-
 // InitDB initializes the database connection
 func InitDB() (*gorm.DB, error) {
 	var err error
 	dbOnce.Do(func() {
-		// Database file path
-		// 将数据库文件路径设置在 /data 卷中，以便持久化
-		dbPath := "/data/credentials.db"
+		// Get database connection string from environment variable
+		dsn := os.Getenv("DATABASE_URL")
+		if dsn == "" {
+			log.Println("DATABASE_URL environment variable not set. Using default SQLite for local development.")
+			// Fallback to SQLite for local development if DATABASE_URL is not set
+			dbPath := "./credentials_dev.db" // Local dev database file
+			config := &gorm.Config{
+				Logger: logger.Default.LogMode(logger.Silent),
+			}
+			db, err = gorm.Open(sqlite.Open(dbPath), config) // Keep sqlite for fallback
+			if err != nil {
+				log.Printf("Failed to connect to local SQLite database: %v", err)
+				return
+			}
+		} else {
+			// Configure GORM for PostgreSQL
+			config := &gorm.Config{
+				Logger: logger.Default.LogMode(logger.Silent),
+			}
 
-		// Ensure database directory exists
-		if err = ensureDBDir(dbPath); err != nil {
-			log.Printf("Failed to create database directory: %v", err)
-			return
-		}
-
-		// Configure GORM
-		config := &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Silent),
-		}
-
-		// Connect to database
-		db, err = gorm.Open(sqlite.Open(dbPath), config)
-		if err != nil {
-			log.Printf("Failed to connect to database: %v", err)
-			return
+			// Connect to PostgreSQL database
+			db, err = gorm.Open(postgres.Open(dsn), config)
+			if err != nil {
+				log.Printf("Failed to connect to PostgreSQL database: %v", err)
+				return
+			}
 		}
 
 		// Auto migrate table structure
@@ -84,6 +85,12 @@ func InitDB() (*gorm.DB, error) {
 	})
 
 	return db, err
+}
+
+// ensureDBDir is no longer needed for PostgreSQL, but kept for SQLite fallback
+func ensureDBDir(dbPath string) error {
+	dir := filepath.Dir(dbPath)
+	return os.MkdirAll(dir, 0755)
 }
 
 // GetDB returns the database connection
