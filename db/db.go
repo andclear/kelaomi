@@ -1,6 +1,8 @@
 package db
 
 import (
+	"errors"
+	"github.com/jackc/pgconn" // For PostgreSQL error codes
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -79,8 +81,28 @@ func InitDB() (*gorm.DB, error) {
 		// Auto migrate table structure
 		err = db.AutoMigrate(&Credential{}, &APIToken{}, &AdminPassword{})
 		if err != nil {
-			log.Printf("Failed to migrate table structure: %v", err)
-			return
+			log.Printf("AutoMigrate returned error: %v (Type: %T)", err, err)
+			var pgErr *pgconn.PgError
+			isPgError := errors.As(err, &pgErr)
+			isCode42P07 := false
+			if isPgError {
+				log.Printf("Error is a PgError. Code: [%s]", pgErr.Code) // Log the code with brackets to see whitespace
+				if pgErr.Code == "42P07" {
+					isCode42P07 = true
+				}
+			} else {
+				log.Println("Error is NOT a PgError.")
+			}
+
+			if isPgError && isCode42P07 {
+				log.Println("Tables already exist (PgError 42P07 detected), skipping migration.")
+				err = nil // Clear the error
+			} else {
+				log.Printf("Failed to migrate table structure (isPgError: %t, isCode42P07: %t): %v", isPgError, isCode42P07, err)
+				// This return is important: if migration truly fails (not 42P07), InitDB should report an error.
+				// The 'err' variable (outer scope) holds the error.
+				return
+			}
 		}
 	})
 
