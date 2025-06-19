@@ -10,7 +10,7 @@ import (
 // Configuration & constants
 const (
 	// Debug mode for verbose logging
-	DebugMode = false
+	DebugMode = true
 
 	// Upstream Atlassian AI Gateway
 	RovoDevProxyURL      = "https://api.atlassian.com/rovodev/v2/proxy/ai"
@@ -28,14 +28,6 @@ var SupportedModels = []string{
 	"anthropic:claude-3-5-sonnet-v2@20241022",
 	"anthropic:claude-3-7-sonnet@20250219",
 	"anthropic:claude-sonnet-4@20250514",
-	"anthropic:claude-opus-4@20250514",
-	"google:gemini-2.0-flash-001",
-	"google:gemini-2.5-pro-preview-03-25",
-	"google:gemini-2.5-flash-preview-04-17",
-	"bedrock:anthropic.claude-3-5-sonnet-20241022-v2:0",
-	"bedrock:anthropic.claude-3-7-sonnet-20250219-v1:0",
-	"bedrock:anthropic.claude-sonnet-4-20250514-v1:0",
-	"bedrock:anthropic.claude-opus-4-20250514-v1:0",
 }
 
 // Credential represents an email/token pair
